@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Secure Device Verification</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px 24px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.5s ease;
+        }
+
+        .shield-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--accent-blue);
+            transition: all 0.5s ease;
+        }
+
+        .shield-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--accent-blue);
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            color: var(--text-muted);
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        /* Loading Animation */
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-blue);
+            animation: spin 1s ease-in-out infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Colors */
+        .verified {
+            color: var(--success) !important;
+        }
+        .blocked {
+            color: var(--danger) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="app-card">
+        <div class="shield-icon" id="icon-box">
+            <svg viewBox="0 0 24 24" id="shield-svg">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.5 1.1 2.5 2.5S13.4 12 12 12s-2.5-1.1-2.5-2.5S10.6 7 12 7zm0 11c-2.33 0-4.32-1.45-5.12-3.5.03-.02.07-.05.12-.08.43-.24 1.74-.83 2.5-1.09.43.32.96.53 1.54.53.58 0 1.11-.21 1.54-.53.76.26 2.07.85 2.5 1.09.05.03.09.06.12.08-.8 2.05-2.79 3.5-5.12 3.5z"/>
+            </svg>
+        </div>
+
+        <h2 id="main-title">Device Verification</h2>
+        <p class="subtitle" id="main-desc">Securing your account against multi-accounting and bot networks. Please wait...</p>
+
+        <div class="status-badge" id="badge">Analyzing...</div>
+
+        <div class="status-box">
+            <div class="status-item">
+                <span class="status-label">Device Security:</span>
+                <span class="status-value" id="dev-status"><div class="spinner"></div></span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Network Quality:</span>
+                <span class="status-value" id="net-status">Waiting...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Your Secure IP:</span>
+                <span class="status-value" id="ip-status">Detecting...</span>
+            </div>
+        </div>
+
+        <button class="btn" id="submit-btn" onclick="sendDataToBot()">Complete Verification</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // মেক মিনি অ্যাপ ফুল স্ক্রিন
+        tg.ready();
+
+        let final_device_id = "";
+        let final_ip = "";
+        let final_country = "";
+        let is_vpn = false;
+
+        // ইনিশিয়াল অ্যানিমেশন ও ফিঙ্গারপ্রিন্ট লোড
+        setTimeout(() => {
+            initVerification();
+        }, 1200);
+
+        function initVerification() {
+            document.getElementById('dev-status').innerHTML = "Scanning...";
+            
+            FingerprintJS.load()
+                .then(fp => fp.get())
+                .then(result => {
+                    final_device_id = result.visitorId;
+                    document.getElementById('dev-status').innerHTML = "⚙️ Secure ID Generated";
+                    checkNetwork();
+                })
+                .catch(err => {
+                    document.getElementById('dev-status').innerHTML = "⚠️ Scan Failed";
+                    failVerification("Device scan error");
+                });
+        }
+
+        function checkNetwork() {
+            document.getElementById('net-status').innerHTML = "Checking VPN...";
+            
+            // লেয়ার ১ এবং লেয়ার ২ ভিপিএন চেকিং ফ্রিতে করার জন্য ip-api ব্যবহার করা হয়েছে
+            fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,proxy,hosting,query')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "success") {
+                        final_ip = data.query;
+                        final_country = data.country;
+                        document.getElementById('ip-status').innerHTML = final_ip + ` (${data.countryCode})`;
+
+                        // ভিপিএন, প্রক্সি বা হোস্টিং ক্লাউড নেটওয়ার্ক কিনা তা চেক
+                        if (data.proxy === true || data.hosting === true) {
+                            is_vpn = true;
+                            document.getElementById('net-status').innerHTML = "❌ VPN/Proxy Detected";
+                            document.getElementById('net-status').className = "status-value blocked";
+                            failVerification("VPN or Proxy network is strictly prohibited.");
+                        } else {
+                            // সাকসেস ভেরিফিকেশন
+                            document.getElementById('net-status').innerHTML = "🟢 Clean Network (No VPN)";
+                            document.getElementById('net-status').className = "status-value verified";
+                            passVerification();
+                        }
+                    } else {
+                        // ব্যাকআপ আইপি চেকার (যদি প্রথম লিঙ্ক ব্লক থাকে)
+                        backupNetworkCheck();
+                    }
+                })
+                .catch(() => {
+                    backupNetworkCheck();
+                });
+        }
+
+        function backupNetworkCheck() {
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(data => {
+                    final_ip = data.ip;
+                    final_country = data.country_name;
+                    document.getElementById('ip-status').innerHTML = final_ip;
+                    
+                    // বেসিক ভিপিএন টাইমজোন ম্যাচিং চেক
+                    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    if (data.timezone && browserTimezone !== data.timezone) {
+                        is_vpn = true;
+                        document.getElementById('net-status').innerHTML = "❌ Proxy Detected (TZ)";
+                        document.getElementById('net-status').className = "status-value blocked";
+                        failVerification("Timezone mismatch! Turn off VPN.");
+                    } else {
+                        document.getElementById('net-status').innerHTML = "🟢 Network Passed";
+                        document.getElementById('net-status').className = "status-value verified";
+                        passVerification();
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('net-status').innerHTML = "🟢 Network Bypass";
+                    passVerification(); // এপিআই রেসপন্স না করলে ইউজার এক্সপেরিয়েন্সের জন্য পাস করানো
+                });
+        }
+
+        function passVerification() {
+            const iconBox = document.getElementById('icon-box');
+            const badge = document.getElementById('badge');
+            
+            iconBox.style.border = "2px solid var(--success)";
+            iconBox.style.background = "rgba(16, 185, 129, 0.1)";
+            document.getElementById('shield-svg').style.fill = "var(--success)";
+            
+            badge.innerHTML = "Verified";
+            badge.style.color = "white";
+            badge.style.background = "var(--success)";
+            
+            document.getElementById('main-title').innerHTML = "Device Secured!";
+            document.getElementById('main-desc').innerHTML = "Your current device and network are valid. Click below to continue.";
+            
+            document.getElementById('submit-btn').style.display = "block";
+        }
+
+        function failVerification(reason) {
+            const iconBox = document.getElementById('icon-box');
+            const badge = document.getElementById('badge');
+            
+            iconBox.style.border = "2px solid var(--danger)";
+            iconBox.style.background = "rgba(239, 68, 68, 0.1)";
+            document.getElementById('shield-svg').style.fill = "var(--danger)";
+            
+            badge.innerHTML = "Blocked";
+            badge.style.color = "white";
+            badge.style.background = "var(--danger)";
+            
+            document.getElementById('main-title').innerHTML = "Verification Failed";
+            document.getElementById('main-desc').innerHTML = reason;
+            document.getElementById('submit-btn').style.display = "none";
+        }
+
+        function sendDataToBot() {
+            // বটের ব্যাকএন্ডে সুরক্ষিত জেসন ডাটা পাঠানো
+            const payload = {
+                status: "VERIFIED",
+                device_id: final_device_id,
+                ip: final_ip,
+                country: final_country
+            };
+            
+            tg.sendData(JSON.stringify(payload));
+            
+            // ডাটা পাঠানোর পর অটোমেটিক মিনি অ্যাপ ক্লোজ হয়ে যাবে
+            setTimeout(() => {
+                tg.close();
+            }, 500);
+        }
+    </script>
+</body>
+</html>
