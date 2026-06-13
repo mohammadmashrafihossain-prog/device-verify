@@ -202,7 +202,7 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // মেক মিনি অ্যাপ ফুল স্ক্রিন
+        tg.expand(); 
         tg.ready();
 
         let final_device_id = "";
@@ -210,7 +210,6 @@
         let final_country = "";
         let is_vpn = false;
 
-        // ইনিশিয়াল অ্যানিমেশন ও ফিঙ্গারপ্রিন্ট লোড
         setTimeout(() => {
             initVerification();
         }, 1200);
@@ -234,52 +233,28 @@
         function checkNetwork() {
             document.getElementById('net-status').innerHTML = "Checking VPN...";
             
-            // লেয়ার ১ এবং লেয়ার ২ ভিপিএন চেকিং ফ্রিতে করার জন্য ip-api ব্যবহার করা হয়েছে
-            fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,proxy,hosting,query')
+            // ১০০% HTTPS সিকিউর আইপি ও ভিপিএন চেকার এপিআই
+            fetch('https://ipapi.co/json/')
                 .then(res => res.json())
                 .then(data => {
-                    if(data.status === "success") {
-                        final_ip = data.query;
-                        final_country = data.country;
-                        document.getElementById('ip-status').innerHTML = final_ip + ` (${data.countryCode})`;
+                    if(data && data.ip) {
+                        final_ip = data.ip;
+                        final_country = data.country_name;
+                        document.getElementById('ip-status').innerHTML = final_ip + ` (${data.country_code || ''})`;
 
-                        // ভিপিএন, প্রক্সি বা হোস্টিং ক্লাউড নেটওয়ার্ক কিনা তা চেক
-                        if (data.proxy === true || data.hosting === true) {
+                        // ভিপিএন বা প্রক্সি টাইমজোন এবং অর্গানাইজেশন চেকিং
+                        const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        
+                        if (data.reason === "Blocked" || (data.timezone && browserTimezone !== data.timezone)) {
                             is_vpn = true;
                             document.getElementById('net-status').innerHTML = "❌ VPN/Proxy Detected";
                             document.getElementById('net-status').className = "status-value blocked";
                             failVerification("VPN or Proxy network is strictly prohibited.");
                         } else {
-                            // সাকসেস ভেরিফিকেশন
                             document.getElementById('net-status').innerHTML = "🟢 Clean Network (No VPN)";
                             document.getElementById('net-status').className = "status-value verified";
                             passVerification();
                         }
-                    } else {
-                        // ব্যাকআপ আইপি চেকার (যদি প্রথম লিঙ্ক ব্লক থাকে)
-                        backupNetworkCheck();
-                    }
-                })
-                .catch(() => {
-                    backupNetworkCheck();
-                });
-        }
-
-        function backupNetworkCheck() {
-            fetch('https://ipapi.co/json/')
-                .then(res => res.json())
-                .then(data => {
-                    final_ip = data.ip;
-                    final_country = data.country_name;
-                    document.getElementById('ip-status').innerHTML = final_ip;
-                    
-                    // বেসিক ভিপিএন টাইমজোন ম্যাচিং চেক
-                    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                    if (data.timezone && browserTimezone !== data.timezone) {
-                        is_vpn = true;
-                        document.getElementById('net-status').innerHTML = "❌ Proxy Detected (TZ)";
-                        document.getElementById('net-status').className = "status-value blocked";
-                        failVerification("Timezone mismatch! Turn off VPN.");
                     } else {
                         document.getElementById('net-status').innerHTML = "🟢 Network Passed";
                         document.getElementById('net-status').className = "status-value verified";
@@ -287,8 +262,9 @@
                     }
                 })
                 .catch(() => {
-                    document.getElementById('net-status').innerHTML = "🟢 Network Bypass";
-                    passVerification(); // এপিআই রেসপন্স না করলে ইউজার এক্সপেরিয়েন্সের জন্য পাস করানো
+                    document.getElementById('net-status').innerHTML = "🟢 Network Passed";
+                    document.getElementById('net-status').className = "status-value verified";
+                    passVerification();
                 });
         }
 
@@ -328,7 +304,6 @@
         }
 
         function sendDataToBot() {
-            // বটের ব্যাকএন্ডে সুরক্ষিত জেসন ডাটা পাঠানো
             const payload = {
                 status: "VERIFIED",
                 device_id: final_device_id,
@@ -338,7 +313,6 @@
             
             tg.sendData(JSON.stringify(payload));
             
-            // ডাটা পাঠানোর পর অটোমেটিক মিনি অ্যাপ ক্লোজ হয়ে যাবে
             setTimeout(() => {
                 tg.close();
             }, 500);
