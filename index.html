@@ -3,263 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Secure Device Verification</title>
+    <title>Secure Verification</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-blue: #38bdf8;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            user-select: none;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
             padding: 20px;
-            overflow: hidden;
         }
-
-        .container {
+        .card {
             width: 100%;
-            max-width: 400px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 30px 24px;
+            max-width: 360px;
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 30px 20px;
             text-align: center;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
         }
-
-        .shield-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            background: rgba(56, 189, 248, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed var(--accent-blue);
-            transition: all 0.3s ease;
+        .icon {
+            font-size: 50px;
+            margin-bottom: 15px;
         }
-
-        .shield-icon svg {
-            width: 40px;
-            height: 40px;
-            fill: var(--accent-blue);
-        }
-
         h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-
-        .status-box {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.02);
-        }
-
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
+            font-size: 20px;
             margin-bottom: 10px;
         }
-
-        .status-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .status-label {
-            color: var(--text-muted);
-        }
-
-        .status-value {
-            font-weight: 600;
-            color: var(--accent-blue);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 700;
+        p {
+            color: #94a3b8;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 25px;
         }
-
         .btn {
             width: 100%;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 15px;
+            border-radius: 12px;
             border: none;
-            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
             color: white;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
-            display: none;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
         }
-
-        .verified { color: var(--success) !important; }
-        .blocked { color: var(--danger) !important; }
+        .btn:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
 
-    <div class="container" id="app-card">
-        <div class="shield-icon" id="icon-box">
-            <svg viewBox="0 0 24 24" id="shield-svg">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.5 1.1 2.5 2.5S13.4 12 12 12s-2.5-1.1-2.5-2.5S10.6 7 12 7zm0 11c-2.33 0-4.32-1.45-5.12-3.5.03-.02.07-.05.12-.08.43-.24 1.74-.83 2.5-1.09.43.32.96.53 1.54.53.58 0 1.11-.21 1.54-.53.76.26 2.07.85 2.5 1.09.05.03.09.06.12.08-.8 2.05-2.79 3.5-5.12 3.5z"/>
-            </svg>
-        </div>
-
-        <h2 id="main-title">Device Verification</h2>
-        <p class="subtitle" id="main-desc">Securing your account against multi-accounting and bot networks. Please wait...</p>
-
-        <div class="status-badge" id="badge">Analyzing...</div>
-
-        <div class="status-box">
-            <div class="status-item">
-                <span class="status-label">Device Security:</span>
-                <span class="status-value" id="dev-status">Checking...</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Network Integrity:</span>
-                <span class="status-value" id="net-status">Waiting...</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Device Locale:</span>
-                <span class="status-value" id="ip-status">Waiting...</span>
-            </div>
-        </div>
-
-        <button class="btn" id="submit-btn" onclick="sendDataToBot()">Complete Verification</button>
+    <div class="card">
+        <div class="icon">🔐</div>
+        <h2>Device Verification</h2>
+        <p>Click the button below to secure your account and verify your device network.</p>
+        <button class="btn" onclick="submitData()">Verify & Continue</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); 
+        tg.expand();
         tg.ready();
 
-        let final_device_id = "";
-        
-        // ১ সেকেন্ডের মধ্যে অ্যানিমেশনসহ প্রসেস রান হবে
-        setTimeout(() => {
-            runNativeVerification();
-        }, 800);
-
-        function runNativeVerification() {
-            // ১. নেটিভ ডিভাইস ফিঙ্গারপ্রিন্ট জেনারেটর (স্ক্রিন, মেমোরি ও হার্ডওয়্যার ভিত্তিক)
-            try {
-                const screenData = window.screen.width + "x" + window.screen.height + "x" + window.screen.colorDepth;
-                const hardwareData = (navigator.hardwareConcurrency || 4) + "-" + (navigator.deviceMemory || 4);
-                const rawId = btoa(screenData + "-" + hardwareData);
-                final_device_id = "DEV-" + rawId.substring(0, 12).toUpperCase();
-                
-                document.getElementById('dev-status').innerHTML = "🟢 Unique ID Verified";
-                document.getElementById('dev-status').className = "status-value verified";
-            } catch(e) {
-                final_device_id = "DEV-" + Math.random().toString(36).substring(2, 12).toUpperCase();
-                document.getElementById('dev-status').innerHTML = "🟢 Pattern Verified";
-                document.getElementById('dev-status').className = "status-value verified";
+        function submitData() {
+            // অফলাইন সিকিউরিটি: ফোনের টাইমজোন দিয়ে প্রক্সি/ভিপিএন চেক
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dhaka";
+            
+            if (tz.includes("America") || tz.includes("Europe") || tz.includes("Pacific")) {
+                alert("VPN or Proxy is detected! Please turn off your VPN and try again.");
+                return;
             }
 
-            // ২. নেティブ ভিপিএন ও টাইমজোন চেকার
-            const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dhaka";
-            const userLang = navigator.language || "en-US";
-            document.getElementById('ip-status').innerHTML = `${browserTimezone.split('/')[1] || 'Global'} (${userLang})`;
+            // কোনো এক্সটার্নাল লাইব্রেরি ছাড়া ব্রাউজার প্রোপার্টি দিয়ে ইউনিক আইডি তৈরি
+            const screenInfo = window.screen.width + "x" + window.screen.height;
+            const coreInfo = navigator.hardwareConcurrency || 4;
+            const generatedID = "ID-" + btoa(screenInfo + "-" + coreInfo).substring(0, 10).toUpperCase();
 
-            // প্রক্সি এবং ফেক লোকেশন সিকিউরিটি লেয়ার
-            if (browserTimezone.includes("America") || browserTimezone.includes("Europe/London") || browserTimezone.includes("Pacific")) {
-                document.getElementById('net-status').innerHTML = "❌ Proxy/VPN Detected";
-                document.getElementById('net-status').className = "status-value blocked";
-                failVerification("VPN or Proxy networks are strictly prohibited. Turn off VPN!");
-            } else {
-                document.getElementById('net-status').innerHTML = "🟢 Safe Network";
-                document.getElementById('net-status').className = "status-value verified";
-                passVerification();
-            }
-        }
-
-        function passVerification() {
-            const iconBox = document.getElementById('icon-box');
-            const badge = document.getElementById('badge');
-            
-            iconBox.style.border = "2px solid var(--success)";
-            iconBox.style.background = "rgba(16, 185, 129, 0.1)";
-            document.getElementById('shield-svg').style.fill = "var(--success)";
-            
-            badge.innerHTML = "Verified";
-            badge.style.color = "white";
-            badge.style.background = "var(--success)";
-            
-            document.getElementById('main-title').innerHTML = "Device Secured!";
-            document.getElementById('main-desc').innerHTML = "Your device and network are valid. Click below to complete.";
-            
-            document.getElementById('submit-btn').style.display = "block";
-        }
-
-        function failVerification(reason) {
-            const iconBox = document.getElementById('icon-box');
-            const badge = document.getElementById('badge');
-            
-            iconBox.style.border = "2px solid var(--danger)";
-            iconBox.style.background = "rgba(239, 68, 68, 0.1)";
-            document.getElementById('shield-svg').style.fill = "var(--danger)";
-            
-            badge.innerHTML = "Blocked";
-            badge.style.color = "white";
-            badge.style.background = "var(--danger)";
-            
-            document.getElementById('main-title').innerHTML = "Verification Failed";
-            document.getElementById('main-desc').innerHTML = reason;
-            document.getElementById('submit-btn').style.display = "none";
-        }
-
-        function sendDataToBot() {
             const payload = {
                 status: "VERIFIED",
-                device_id: final_device_id,
-                ip: "Local_Verified",
+                device_id: generatedID,
+                ip: "Secure_Local",
                 country: "Local"
             };
-            
+
+            // সরাসরি বটের ব্যাকঅ্যান্ডে ডাটা পাঠানো
             tg.sendData(JSON.stringify(payload));
             
             setTimeout(() => {
